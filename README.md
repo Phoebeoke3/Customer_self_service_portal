@@ -152,11 +152,8 @@ The application uses SQLAlchemy with SQLite database and includes the following 
 
 ## License
 
-This project is developed for SwissAxa as part of their digital transformation strategy.
 
 ## Contact
 
-For support, contact SwissAxa Customer Service:
-- Email: service@swissaxa.de
-- Phone: +49 221 123456
+
 
