@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}myDocuments - SwissAxa Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-folder-open"></i> myDocuments
+        </h1>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Uploaded Documents</h5>
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+            <i class="fas fa-upload"></i> Upload Document
+        </button>
+    </div>
+    <div class="card-body">
+        {% if documents %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Document Name</th>
+                        <th>Document Type</th>
+                        <th>Uploaded Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for document in documents %}
+                    <tr>
+                        <td>
+                            <i class="fas fa-file-pdf text-danger"></i> {{ document.filename }}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ document.document_type }}</span>
+                        </td>
+                        <td>{{ document.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <a href="{{ url_for('download_document', doc_id=document.id) }}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
+            <p class="text-muted">No documents uploaded yet.</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+                <i class="fas fa-upload"></i> Upload Document
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Upload Document Modal -->
+<div class="modal fade" id="uploadDocumentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('upload_document') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="document_type" class="form-label">Document Type</label>
+                        <select class="form-select" id="document_type" name="document_type" required>
+                            <option value="policy">Policy Document</option>
+                            <option value="claim">Claim Document</option>
+                            <option value="identity">Identity Document</option>
+                            <option value="proof">Proof of Payment</option>
+                            <option value="medical">Medical Report</option>
+                            <option value="general">General</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="document_file" class="form-label">Select File</label>
+                        <input type="file" class="form-control" id="document_file" name="file" 
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
+                        <small class="form-text text-muted">Max file size: 16MB</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

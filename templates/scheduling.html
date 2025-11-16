@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Scheduling - SwissAxa Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-calendar"></i> Scheduling
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Book Appointment</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('scheduling') }}">
+                    <div class="mb-3">
+                        <label for="appointment_type" class="form-label">Appointment Type</label>
+                        <select class="form-select" id="appointment_type" name="appointment_type" required onchange="updateAgentOptions()">
+                            <option value="service_desk">Customer Service Desk</option>
+                            <option value="agent">Insurance Agent</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="agent_selection" style="display: none;">
+                        <label for="agent_id" class="form-label">Select Agent</label>
+                        <select class="form-select" id="agent_id" name="agent_id">
+                            <option value="">Select an agent...</option>
+                            {% for agent in agents %}
+                            <option value="{{ agent.id }}">{{ agent.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date_time" class="form-label">Date & Time</label>
+                        <input type="datetime-local" class="form-control" id="date_time" name="date_time" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="purpose" class="form-label">Purpose</label>
+                        <textarea class="form-control" id="purpose" name="purpose" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-calendar-check"></i> Book Appointment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">My Appointments</h5>
+            </div>
+            <div class="card-body">
+                {% if appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>With</th>
+                                <th>Date & Time</th>
+                                <th>Purpose</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in appointments %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if appointment.appointment_type == 'service_desk' else 'info' }}">
+                                        {{ appointment.appointment_type.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if appointment.agent %}
+                                        {{ appointment.agent.name }}
+                                    {% else %}
+                                        Customer Service Desk
+                                    {% endif %}
+                                </td>
+                                <td>{{ appointment.date_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>{{ appointment.purpose[:50] }}...</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if appointment.status == 'scheduled' else 'warning' }}">
+                                        {{ appointment.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar fa-4x text-muted mb-3"></i>
+                    <p class="text-muted">No appointments scheduled yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateAgentOptions() {
+        const appointmentType = document.getElementById('appointment_type').value;
+        const agentSelection = document.getElementById('agent_selection');
+        
+        if (appointmentType === 'agent') {
+            agentSelection.style.display = 'block';
+            document.getElementById('agent_id').required = true;
+        } else {
+            agentSelection.style.display = 'none';
+            document.getElementById('agent_id').required = false;
+        }
+    }
+</script>
+{% endblock %}
+

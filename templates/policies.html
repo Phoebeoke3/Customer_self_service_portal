@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}myPolicies - SwissAxa Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-file-contract"></i> myPolicies
+        </h1>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="policyTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="swissaxa-tab" data-bs-toggle="tab" data-bs-target="#swissaxa" type="button">
+            <i class="fas fa-shield-alt"></i> SwissAxa Policies
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="external-tab" data-bs-toggle="tab" data-bs-target="#external" type="button">
+            <i class="fas fa-external-link-alt"></i> External Policies
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="policyTabContent">
+    <!-- SwissAxa Policies Tab -->
+    <div class="tab-pane fade show active" id="swissaxa" role="tabpanel">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">SwissAxa Policies</h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="alert('Contact SwissAxa to purchase new policies')">
+                    <i class="fas fa-plus"></i> Purchase Policy
+                </button>
+            </div>
+            <div class="card-body">
+                {% if swissaxa_policies %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Policy Number</th>
+                                <th>Policy Type</th>
+                                <th>Coverage Amount</th>
+                                <th>Premium</th>
+                                <th>Expiration Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for policy in swissaxa_policies %}
+                            <tr>
+                                <td><strong>{{ policy.policy_number }}</strong></td>
+                                <td>{{ policy.policy_type }}</td>
+                                <td>{{ "%.2f"|format(policy.coverage_amount) }} EUR</td>
+                                <td>{{ "%.2f"|format(policy.premium) }} EUR</td>
+                                <td>
+                                    <span class="badge bg-{{ 'warning' if policy.days_until_expiry < 30 and policy.days_until_expiry >= 0 else 'success' if policy.expiration_date else 'secondary' }}">
+                                        {{ policy.expiration_date.strftime('%Y-%m-%d') if policy.expiration_date else 'N/A' }}
+                                    </span>
+                                    {% if policy.days_until_expiry < 30 and policy.days_until_expiry >= 0 %}
+                                        <small class="text-warning d-block"><i class="fas fa-exclamation-triangle"></i> Expires in {{ policy.days_until_expiry }} days</small>
+                                    {% elif policy.days_until_expiry < 0 %}
+                                        <small class="text-danger d-block"><i class="fas fa-exclamation-circle"></i> Expired</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if policy.status == 'active' else 'secondary' }}">
+                                        {{ policy.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('policy_management') }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i> Manage
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-contract fa-4x text-muted mb-3"></i>
+                    <p class="text-muted">No SwissAxa policies found. Contact SwissAxa to purchase a policy.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- External Policies Tab -->
+    <div class="tab-pane fade" id="external" role="tabpanel">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">External Policies</h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadPolicyModal">
+                    <i class="fas fa-upload"></i> Upload External Policy
+                </button>
+            </div>
+            <div class="card-body">
+                {% if external_policies %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Insurance Company</th>
+                                <th>Policy Number</th>
+                                <th>Policy Type</th>
+                                <th>Expiration Date</th>
+                                <th>Uploaded Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for policy in external_policies %}
+                            <tr>
+                                <td><strong>{{ policy.insurance_company }}</strong></td>
+                                <td>{{ policy.policy_number or 'N/A' }}</td>
+                                <td>{{ policy.policy_type or 'N/A' }}</td>
+                                <td>{{ policy.expiration_date.strftime('%Y-%m-%d') if policy.expiration_date else 'N/A' }}</td>
+                                <td>{{ policy.uploaded_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="comparePolicy({{ policy.id }})">
+                                        <i class="fas fa-search"></i> Compare
+                                    </button>
+                                    <a href="{{ url_for('static', filename='uploads/policies/' + policy.file_path.split('/')[-1]) }}" 
+                                       class="btn btn-sm btn-secondary" target="_blank">
+                                        <i class="fas fa-download"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-contract fa-4x text-muted mb-3"></i>
+                    <p class="text-muted">No external policies uploaded yet.</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadPolicyModal">
+                        <i class="fas fa-upload"></i> Upload External Policy
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload External Policy Modal -->
+<div class="modal fade" id="uploadPolicyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload External Policy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="uploadPolicyForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="insurance_company" class="form-label">Insurance Company</label>
+                        <input type="text" class="form-control" id="insurance_company" name="insurance_company" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="policy_number" class="form-label">Policy Number</label>
+                        <input type="text" class="form-control" id="policy_number" name="policy_number">
+                    </div>
+                    <div class="mb-3">
+                        <label for="policy_type" class="form-label">Policy Type</label>
+                        <input type="text" class="form-control" id="policy_type" name="policy_type">
+                    </div>
+                    <div class="mb-3">
+                        <label for="expiration_date" class="form-label">Expiration Date</label>
+                        <input type="date" class="form-control" id="expiration_date" name="expiration_date">
+                    </div>
+                    <div class="mb-3">
+                        <label for="policy_file" class="form-label">Policy Document</label>
+                        <input type="file" class="form-control" id="policy_file" name="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison Results Modal -->
+<div class="modal fade" id="comparisonModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">AI-Powered Policy Comparison</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="comparisonResults">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $('#uploadPolicyForm').on('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        $.ajax({
+            url: '{{ url_for("upload_external_policy") }}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                location.reload();
+            },
+            error: function(xhr) {
+                alert('Error uploading policy: ' + (xhr.responseJSON?.error || 'Unknown error'));
+            }
+        });
+    });
+
+    function comparePolicy(policyId) {
+        $('#comparisonModal').modal('show');
+        $('#comparisonResults').html('<div class="text-center"><div class="spinner-border" role="status"></div></div>');
+        
+        // Simulate AI comparison - in production, this would call the API with actual policy data
+        setTimeout(function() {
+            $('#comparisonResults').html(`
+                <div class="alert alert-info">
+                    <h6>Similar Products Found:</h6>
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Comprehensive Insurance Premium</h5>
+                            <p class="card-text">Match Score: 85%</p>
+                            <p class="card-text">Premium: 99.99 EUR/month</p>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> Better coverage (20% more)</li>
+                                <li><i class="fas fa-check text-success"></i> 24/7 customer support</li>
+                                <li><i class="fas fa-check text-success"></i> Faster claims processing</li>
+                            </ul>
+                            <button class="btn btn-primary">Get Quote</button>
+                        </div>
+                    </div>
+                </div>
+            `);
+        }, 1000);
+    }
+</script>
+{% endblock %}
+

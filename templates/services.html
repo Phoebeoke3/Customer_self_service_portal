@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}myServices - SwissAxa Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-cog"></i> myServices
+        </h1>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
+                <h5 class="card-title">Claims Management</h5>
+                <p class="card-text text-muted">File claims, upload media, and track claim status</p>
+                <a href="{{ url_for('claims') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i> Manage Claims
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-edit fa-4x text-info mb-3"></i>
+                <h5 class="card-title">Policy Management</h5>
+                <p class="card-text text-muted">Access policies, upgrade, and make change requests</p>
+                <a href="{{ url_for('policy_management') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i> Manage Policies
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-envelope fa-4x text-success mb-3"></i>
+                <h5 class="card-title">Contact Management</h5>
+                <p class="card-text text-muted">Send emails to customer service or your agent</p>
+                <a href="{{ url_for('contact') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i> Contact Us
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar fa-4x text-primary mb-3"></i>
+                <h5 class="card-title">Scheduling</h5>
+                <p class="card-text text-muted">Book appointments with customer service or agent</p>
+                <a href="{{ url_for('scheduling') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i> Schedule
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

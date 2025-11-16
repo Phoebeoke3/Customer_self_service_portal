@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Management - SwissAxa Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-envelope"></i> Contact Management
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Send Email</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('contact') }}">
+                    <div class="mb-3">
+                        <label for="recipient_type" class="form-label">Recipient Type</label>
+                        <select class="form-select" id="recipient_type" name="recipient_type" required onchange="updateRecipientOptions()">
+                            <option value="service_desk">Customer Service Desk</option>
+                            <option value="agent">Insurance Agent</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="recipient_email" class="form-label">Recipient Email</label>
+                        <select class="form-select" id="recipient_email" name="recipient_email" required>
+                            <option value="service@swissaxa.de">service@swissaxa.de (Customer Service Desk)</option>
+                            {% for agent in agents %}
+                            <option value="{{ agent.email }}">{{ agent.email }} - {{ agent.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="subject" name="subject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea class="form-control" id="message" name="message" rows="8" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Send Email
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Contact Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-headset"></i> Customer Service Desk</h6>
+                        <p>
+                            <strong>Email:</strong> service@swissaxa.de<br>
+                            <strong>Phone:</strong> +49 221 123456<br>
+                            <strong>Hours:</strong> Monday - Friday, 9:00 - 18:00
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user-tie"></i> Your Insurance Agent</h6>
+                        {% if agents %}
+                            {% for agent in agents %}
+                            <p>
+                                <strong>Name:</strong> {{ agent.name }}<br>
+                                <strong>Email:</strong> {{ agent.email }}<br>
+                                <strong>Phone:</strong> {{ agent.phone or 'N/A' }}
+                            </p>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">No assigned agent</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateRecipientOptions() {
+        const recipientType = document.getElementById('recipient_type').value;
+        const recipientEmail = document.getElementById('recipient_email');
+        
+        if (recipientType === 'service_desk') {
+            recipientEmail.innerHTML = '<option value="service@swissaxa.de">service@swissaxa.de (Customer Service Desk)</option>';
+        } else {
+            let options = '';
+            {% for agent in agents %}
+            options += '<option value="{{ agent.email }}">{{ agent.email }} - {{ agent.name }}</option>';
+            {% endfor %}
+            recipientEmail.innerHTML = options || '<option value="">No agents available</option>';
+        }
+    }
+</script>
+{% endblock %}
+

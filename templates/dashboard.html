@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SwissAxa Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-home"></i> Welcome, {{ user.first_name or 'Customer' }}!
+        </h1>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-primary h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-subtitle mb-2">SwissAxa Policies</h6>
+                        <h2 class="card-title">{{ user.swissaxa_policies|length }}</h2>
+                    </div>
+                    <i class="fas fa-file-contract fa-3x opacity-50"></i>
+                </div>
+                <a href="{{ url_for('policies') }}" class="btn btn-light btn-sm mt-3">
+                    View Policies <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-success h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-subtitle mb-2">Documents</h6>
+                        <h2 class="card-title">{{ user.documents|length }}</h2>
+                    </div>
+                    <i class="fas fa-folder-open fa-3x opacity-50"></i>
+                </div>
+                <a href="{{ url_for('documents') }}" class="btn btn-light btn-sm mt-3">
+                    View Documents <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-warning h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-subtitle mb-2">Active Claims</h6>
+                        <h2 class="card-title">{{ user.claims|selectattr('status', 'equalto', 'submitted')|list|length }}</h2>
+                    </div>
+                    <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                </div>
+                <a href="{{ url_for('claims') }}" class="btn btn-light btn-sm mt-3">
+                    View Claims <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-info h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-subtitle mb-2">Appointments</h6>
+                        <h2 class="card-title">{{ user.appointments|selectattr('status', 'equalto', 'scheduled')|list|length }}</h2>
+                    </div>
+                    <i class="fas fa-calendar fa-3x opacity-50"></i>
+                </div>
+                <a href="{{ url_for('scheduling') }}" class="btn btn-light btn-sm mt-3">
+                    View Appointments <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-file-contract"></i> Recent Policies</h5>
+            </div>
+            <div class="card-body">
+                {% if user.swissaxa_policies %}
+                    <ul class="list-group list-group-flush">
+                        {% for policy in user.swissaxa_policies[:5] %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ policy.policy_number }}</strong><br>
+                                <small class="text-muted">{{ policy.policy_type }}</small>
+                            </div>
+                            <span class="badge bg-{{ 'success' if policy.status == 'active' else 'secondary' }}">
+                                {{ policy.status }}
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <a href="{{ url_for('policies') }}" class="btn btn-primary btn-sm mt-3">View All Policies</a>
+                {% else %}
+                    <p class="text-muted">No policies found. Contact SwissAxa to purchase a policy.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Recent Claims</h5>
+            </div>
+            <div class="card-body">
+                {% if user.claims %}
+                    <ul class="list-group list-group-flush">
+                        {% for claim in user.claims[:5] %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ claim.claim_number }}</strong><br>
+                                <small class="text-muted">{{ claim.description[:50] }}...</small>
+                            </div>
+                            <span class="badge bg-{{ 'primary' if claim.status == 'submitted' else 'success' }}">
+                                {{ claim.status }}
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <a href="{{ url_for('claims') }}" class="btn btn-primary btn-sm mt-3">View All Claims</a>
+                {% else %}
+                    <p class="text-muted">No claims filed yet.</p>
+                    <a href="{{ url_for('claims') }}" class="btn btn-primary btn-sm">File a Claim</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

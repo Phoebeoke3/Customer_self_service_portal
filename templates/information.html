@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}myInformation - SwissAxa Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-user"></i> myInformation
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Personal Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('update_information') }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" 
+                                   value="{{ user.first_name or '' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" 
+                                   value="{{ user.last_name or '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ user.email }}" disabled>
+                        <small class="form-text text-muted">Email cannot be changed. Contact customer service if needed.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" 
+                               value="{{ user.phone or '' }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Current Address</label>
+                        <textarea class="form-control" id="address" name="address" rows="3">{{ user.address or '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="correspondence_address" class="form-label">Correspondence Address</label>
+                        <textarea class="form-control" id="correspondence_address" name="correspondence_address" rows="3">{{ user.correspondence_address or '' }}</textarea>
+                        <small class="form-text text-muted">Leave blank to use current address for correspondence</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="bank_account" class="form-label">Bank Account Number</label>
+                        <input type="text" class="form-control" id="bank_account" name="bank_account" 
+                               value="{{ user.bank_account or '' }}">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Information
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Account Security</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">To change your password, please contact customer service at service@swissaxa.de</p>
+                <a href="{{ url_for('contact') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-envelope"></i> Contact Support
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
