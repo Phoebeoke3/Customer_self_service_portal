@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - SwissAxa Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-line"></i> Analytics Dashboard
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Page Views</h5>
+                <h2>{{ summary.page_views }}</h2>
+                <small>Last {{ summary.period_days }} days</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Claims Filed</h5>
+                <h2>{{ summary.claims_filed }}</h2>
+                <small>Last {{ summary.period_days }} days</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Documents Uploaded</h5>
+                <h2>{{ summary.documents_uploaded }}</h2>
+                <small>Last {{ summary.period_days }} days</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">AI Total Cost</h5>
+                <h2>${{ "%.2f"|format(ai_stats.total_cost) }}</h2>
+                <small>{{ ai_stats.total_calls }} calls</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">AI Feature Usage</h5>
+            </div>
+            <div class="card-body">
+                {% if summary.ai_usage %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Usage Count</th>
+                                <th>Tokens</th>
+                                <th>Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usage in summary.ai_usage %}
+                            <tr>
+                                <td>{{ usage.feature }}</td>
+                                <td>{{ usage.count }}</td>
+                                <td>{{ usage.tokens }}</td>
+                                <td>${{ "%.4f"|format(usage.cost) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No AI usage data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">AI Usage Statistics</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-6">Total API Calls:</dt>
+                    <dd class="col-sm-6">{{ ai_stats.total_calls }}</dd>
+                    
+                    <dt class="col-sm-6">Total Tokens:</dt>
+                    <dd class="col-sm-6">{{ ai_stats.total_tokens }}</dd>
+                    
+                    <dt class="col-sm-6">Total Cost:</dt>
+                    <dd class="col-sm-6">${{ "%.2f"|format(ai_stats.total_cost) }}</dd>
+                    
+                    <dt class="col-sm-6">Average Cost:</dt>
+                    <dd class="col-sm-6">${{ "%.4f"|format(ai_stats.avg_cost) }}</dd>
+                    
+                    <dt class="col-sm-6">Success Rate:</dt>
+                    <dd class="col-sm-6">{{ "%.1f"|format(ai_stats.success_rate) }}%</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

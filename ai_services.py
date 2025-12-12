@@ -164,9 +164,10 @@ class AIService:
             return 'general'
     
     @staticmethod
-    def analyze_claim_damage(image_description: str = None, claim_description: str = None) -> Dict:
+    def analyze_claim_damage(image_description: str = None, claim_description: str = None, 
+                             image_files: List = None) -> Dict:
         """
-        Analyze claim damage from description and/or images
+        Analyze claim damage from description and/or images using OpenAI Vision API
         Returns: damage_type, severity, estimated_value, priority
         """
         if not AIService.is_available():
@@ -179,10 +180,48 @@ class AIService:
             }
         
         try:
-            prompt = f"""
-            Analyze this insurance claim:
+            messages = [
+                {
+                    "role": "system",
+                    "content": "You are an insurance claims assessment expert. Analyze damage accurately from images and descriptions."
+                }
+            ]
+            
+            # Build user message with images if provided
+            user_content = []
+            
+            # Add images using Vision API
+            if image_files:
+                for image_file in image_files[:4]:  # Limit to 4 images
+                    if hasattr(image_file, 'read'):
+                        # File-like object
+                        image_data = image_file.read()
+                        import base64
+                        image_base64 = base64.b64encode(image_data).decode('utf-8')
+                        user_content.append({
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_base64}"
+                            }
+                        })
+                    elif isinstance(image_file, str) and os.path.exists(image_file):
+                        # File path
+                        with open(image_file, 'rb') as f:
+                            image_data = f.read()
+                            import base64
+                            image_base64 = base64.b64encode(image_data).decode('utf-8')
+                            user_content.append({
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_base64}"
+                                }
+                            })
+            
+            # Add text prompt
+            prompt_text = f"""
+            Analyze this insurance claim damage:
             Description: {claim_description or 'No description provided'}
-            Image Analysis: {image_description or 'No image analysis available'}
+            {f'Image Analysis: {image_description}' if image_description else ''}
             
             Provide:
             1. Damage type (water, fire, theft, collision, vandalism, natural_disaster, other)
@@ -194,17 +233,28 @@ class AIService:
             Return as JSON with keys: damage_type, severity, estimated_value_min, estimated_value_max, priority, suggested_description
             """
             
+            user_content.append({
+                "type": "text",
+                "text": prompt_text
+            })
+            
+            messages.append({
+                "role": "user",
+                "content": user_content
+            })
+            
+            # Use gpt-4o-mini for text-only, gpt-4o for vision
+            model = "gpt-4o-mini" if not image_files else "gpt-4o"
+            
             response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are an insurance claims assessment expert. Analyze damage accurately."},
-                    {"role": "user", "content": prompt}
-                ],
+                model=model,
+                messages=messages,
                 temperature=0.5,
                 max_tokens=500
             )
             
             result_text = response.choices[0].message.content
+            tokens_used = response.usage.total_tokens if hasattr(response, 'usage') else 0
             
             try:
                 result = json.loads(result_text)
@@ -219,6 +269,7 @@ class AIService:
                     'suggested_description': result_text[:200] if result_text else claim_description
                 }
             
+            result['tokens_used'] = tokens_used
             return result
             
         except Exception as e:

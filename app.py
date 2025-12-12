@@ -523,8 +523,23 @@ def contact():
         subject = request.form.get('subject')
         message = request.form.get('message')
         
-        # In production, this would send actual emails
-        flash(f'Email sent to {recipient_email}', 'success')
+        # Send actual email using email service
+        try:
+            from email_service import send_contact_email
+            if send_contact_email(
+                recipient_email=recipient_email,
+                sender_name=f"{current_user.first_name} {current_user.last_name}",
+                sender_email=current_user.email,
+                subject=subject,
+                message=message
+            ):
+                flash(f'Email sent to {recipient_email}', 'success')
+            else:
+                flash('Email service is not configured. Please contact support directly.', 'warning')
+        except ImportError:
+            # Fallback if email service not available
+            flash(f'Email would be sent to {recipient_email} (email service not configured)', 'info')
+        
         return redirect(url_for('contact'))
     
     return render_template('contact.html', agents=agents)
@@ -545,6 +560,31 @@ def scheduling():
         )
         db.session.add(appointment)
         db.session.commit()
+        
+        # Send notifications
+        try:
+            from notifications import create_appointment_notification
+            agent_name = appointment.agent.name if appointment.agent else None
+            create_appointment_notification(
+                current_user.id, 
+                appointment.date_time.strftime('%Y-%m-%d %H:%M'),
+                agent_name
+            )
+        except ImportError:
+            pass
+        
+        # Send email confirmation
+        try:
+            from email_service import send_appointment_confirmation
+            agent_name = appointment.agent.name if appointment.agent else None
+            send_appointment_confirmation(
+                current_user.email,
+                appointment.date_time.strftime('%Y-%m-%d %H:%M'),
+                agent_name
+            )
+        except ImportError:
+            pass
+        
         flash('Appointment booked successfully', 'success')
         return redirect(url_for('scheduling'))
     
@@ -699,6 +739,82 @@ def clear_chat_history():
     session.pop('chat_history', None)
     return jsonify({'success': True})
 
+# Register mobile API blueprint
+try:
+    from mobile_api import mobile_api
+    app.register_blueprint(mobile_api)
+except ImportError:
+    pass
+
+# Initialize additional services
+try:
+    from email_service import init_email
+    init_email(app)
+except ImportError:
+    pass
+
+try:
+    from analytics import init_analytics
+    init_analytics(db)
+except ImportError:
+    pass
+
+try:
+    from i18n_support import init_i18n
+    init_i18n(app)
+except ImportError:
+    pass
+
+# Analytics dashboard route
+@app.route('/admin/analytics')
+@login_required
+def analytics_dashboard():
+    """Advanced analytics dashboard"""
+    try:
+        from analytics import get_analytics_summary, get_ai_usage_stats
+        summary = get_analytics_summary(days=30)
+        ai_stats = get_ai_usage_stats(days=30)
+        return render_template('analytics.html', summary=summary, ai_stats=ai_stats)
+    except ImportError:
+        flash('Analytics module not available', 'warning')
+        return redirect(url_for('dashboard'))
+
+# Language switching route
+@app.route('/api/language/<language_code>', methods=['POST'])
+@login_required
+def set_language(language_code):
+    """Set user language preference"""
+    try:
+        from i18n_support import set_language as set_user_language
+        if set_user_language(language_code):
+            return jsonify({'success': True, 'language': language_code})
+        return jsonify({'error': 'Invalid language code'}), 400
+    except ImportError:
+        return jsonify({'error': 'i18n not available'}), 500
+
+# Notifications API
+@app.route('/api/notifications', methods=['GET'])
+@login_required
+def get_notifications():
+    """Get user notifications"""
+    try:
+        from notifications import get_user_notifications
+        notifications = get_user_notifications(current_user.id)
+        return jsonify([n.to_dict() for n in notifications])
+    except ImportError:
+        return jsonify([])
+
+@app.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    """Mark notification as read"""
+    try:
+        from notifications import mark_notification_read
+        mark_notification_read(current_user.id, notification_id)
+        return jsonify({'success': True})
+    except ImportError:
+        return jsonify({'error': 'Notifications not available'}), 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
@@ -707,5 +823,12 @@ if __name__ == '__main__':
             agent = Agent(name='Max Müller', email='max.mueller@swissaxa.de', phone='+49 221 123456')
             db.session.add(agent)
             db.session.commit()
+        
+        # Create analytics tables
+        try:
+            from analytics import AnalyticsEvent, AIUsageLog
+            db.create_all()
+        except ImportError:
+            pass
     app.run(debug=True, host='127.0.0.1', port=5000)
 
