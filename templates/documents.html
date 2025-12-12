@@ -76,13 +76,21 @@
                     <div class="mb-3">
                         <label for="document_type" class="form-label">Document Type</label>
                         <select class="form-select" id="document_type" name="document_type" required>
+                            <option value="auto">
+                                <i class="fas fa-robot"></i> Auto-detect (AI)
+                            </option>
                             <option value="policy">Policy Document</option>
                             <option value="claim">Claim Document</option>
                             <option value="identity">Identity Document</option>
-                            <option value="proof">Proof of Payment</option>
+                            <option value="proof_of_ownership">Proof of Ownership</option>
+                            <option value="repair_invoice">Repair Invoice</option>
+                            <option value="police_report">Police Report</option>
                             <option value="medical">Medical Report</option>
                             <option value="general">General</option>
                         </select>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-robot text-info"></i> Select "Auto-detect" to let AI automatically tag your document
+                        </small>
                     </div>
                     <div class="mb-3">
                         <label for="document_file" class="form-label">Select File</label>

@@ -139,5 +139,222 @@
         </div>
     </div>
 </div>
+
+<!-- AI Features Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-robot"></i> AI-Powered Features
+                </h5>
+                <button class="btn btn-sm btn-light" type="button" id="toggleAIFeatures" onclick="toggleAIFeatures()">
+                    <i class="fas fa-chevron-down" id="aiFeaturesIcon"></i> 
+                    <span id="aiFeaturesText">Show Features</span>
+                </button>
+            </div>
+            <div class="card-body" id="aiFeaturesContent" style="display: none;">
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-info">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-file-contract text-info"></i> AI Policy Comparison
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    Upload external policies and get AI-powered comparisons with SwissAxa products
+                                </p>
+                                <a href="{{ url_for('policies') }}" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-arrow-right"></i> Try It
+                                </a>
+                                <span class="badge bg-success ms-2" id="aiPolicyStatus">Available</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-warning">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-tags text-warning"></i> AI Document Tagging
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    Documents are automatically tagged by AI (proof of ownership, invoices, reports)
+                                </p>
+                                <a href="{{ url_for('documents') }}" class="btn btn-sm btn-outline-warning">
+                                    <i class="fas fa-arrow-right"></i> View Documents
+                                </a>
+                                <span class="badge bg-success ms-2">Available</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-danger">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-search text-danger"></i> AI Claims Analysis
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    AI analyzes damage photos/videos and pre-fills claim descriptions
+                                </p>
+                                <a href="{{ url_for('claims') }}" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-arrow-right"></i> File Claim
+                                </a>
+                                <span class="badge bg-success ms-2">Available</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-success">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-lightbulb text-success"></i> AI Policy Recommendations
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    Get personalized policy recommendations based on your profile
+                                </p>
+                                <a href="{{ url_for('policy_management') }}" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-arrow-right"></i> View Recommendations
+                                </a>
+                                <span class="badge bg-success ms-2">Available</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-info">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-calendar-check text-info"></i> AI Appointment Suggestions
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    Get optimal appointment times based on agent availability patterns
+                                </p>
+                                <a href="{{ url_for('scheduling') }}" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-arrow-right"></i> Schedule
+                                </a>
+                                <span class="badge bg-success ms-2">Available</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-primary">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-shield-alt text-primary"></i> AI Fraud Detection
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    Transaction monitoring and unusual pattern detection for your security
+                                </p>
+                                <a href="{{ url_for('bank') }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-arrow-right"></i> View Bank
+                                </a>
+                                <span class="badge bg-success ms-2">Available</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-info">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-robot text-info"></i> AI Chatbot
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    24/7 AI assistant for customer support and inquiries
+                                </p>
+                                <span class="badge bg-success ms-2">Available</span>
+                                <small class="d-block mt-2 text-muted">
+                                    <i class="fas fa-info-circle"></i> Click the robot icon in the bottom-right corner
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Note:</strong> AI features are being rolled out progressively. Features marked "Available" are ready to use, while "Coming Soon" features are in development.
+                    <br><small id="aiServiceStatus" class="mt-1 d-block"></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Toggle AI Features Section
+    function toggleAIFeatures() {
+        const content = document.getElementById('aiFeaturesContent');
+        const icon = document.getElementById('aiFeaturesIcon');
+        const text = document.getElementById('aiFeaturesText');
+        
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
+            text.textContent = 'Hide Features';
+            // Smooth scroll to section
+            content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            content.style.display = 'none';
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chevron-down');
+            text.textContent = 'Show Features';
+        }
+    }
+    
+    // Check AI service availability
+    $(document).ready(function() {
+        // Check AI service status when features are shown
+        $('#toggleAIFeatures').on('click', function() {
+            setTimeout(function() {
+                if ($('#aiFeaturesContent').is(':visible')) {
+                    $.ajax({
+                        url: '/api/chat',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ message: 'test' }),
+                        success: function() {
+                            $('#aiServiceStatus').html('<i class="fas fa-check-circle text-success"></i> AI services are active');
+                        },
+                        error: function() {
+                            $('#aiServiceStatus').html('<i class="fas fa-exclamation-triangle text-warning"></i> AI services require OpenAI API key. See AI_SETUP.md');
+                        }
+                    });
+                }
+            }, 100);
+        });
+    });
+</script>
+<style>
+    #aiFeaturesContent {
+        animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    #toggleAIFeatures {
+        transition: all 0.2s ease;
+    }
+    
+    #toggleAIFeatures:hover {
+        transform: scale(1.05);
+    }
+</style>
 {% endblock %}
 

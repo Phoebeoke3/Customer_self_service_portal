@@ -8,6 +8,42 @@ import os
 import json
 from pathlib import Path
 
+# Try to import AI services (will work if OpenAI is configured)
+try:
+    from ai_services import AIService
+    AI_AVAILABLE = True
+except (ImportError, Exception) as e:
+    AI_AVAILABLE = False
+    # Create a mock AIService class
+    class AIService:
+        @staticmethod
+        def is_available():
+            return False
+        @staticmethod
+        def compare_policies(data):
+            return {'similar_products': [], 'recommendations': []}
+        @staticmethod
+        def tag_document(filename):
+            return 'general'
+        @staticmethod
+        def analyze_claim_damage(**kwargs):
+            return {}
+        @staticmethod
+        def recommend_policies(profile):
+            return []
+        @staticmethod
+        def suggest_appointment_times(user_id, appointment_type):
+            return []
+        @staticmethod
+        def detect_transaction_anomaly(transactions):
+            return {'is_anomaly': False}
+        @staticmethod
+        def validate_user_data(data):
+            return {'is_valid': True, 'inconsistencies': []}
+        @staticmethod
+        def chat_with_ai(message, history=None):
+            return "AI services are currently unavailable. Please contact customer service."
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'swissaxa-secret-key-2024'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///swissaxa_portal.db'
@@ -279,11 +315,19 @@ def upload_document():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'documents', filename)
         file.save(filepath)
         
+        # AI-powered document tagging
+        document_type = request.form.get('document_type')
+        if not document_type or document_type == 'auto':
+            # Use AI to auto-tag the document
+            ai_tag = AIService.tag_document(filename)
+            document_type = ai_tag
+            flash(f'Document automatically tagged as: {ai_tag.replace("_", " ").title()}', 'info')
+        
         document = Document(
             user_id=current_user.id,
             filename=filename,
             file_path=filepath,
-            document_type=request.form.get('document_type', 'general')
+            document_type=document_type or 'general'
         )
         db.session.add(document)
         db.session.commit()
@@ -362,12 +406,45 @@ def claims():
 @app.route('/services/claims/file', methods=['POST'])
 @login_required
 def file_claim():
+    description = request.form.get('description', '')
+    damage_type = request.form.get('damage_type', '')
+    
+    # AI-powered claims analysis if media is uploaded
+    ai_analysis = None
+    if 'media' in request.files:
+        files = request.files.getlist('media')
+        if files and files[0].filename:
+            # Perform AI analysis on the claim
+            ai_analysis = AIService.analyze_claim_damage(
+                claim_description=description
+            )
+            
+            # Use AI suggestions only if user hasn't provided values
+            # User-provided values take precedence
+            if ai_analysis.get('damage_type') and not damage_type:
+                damage_type = ai_analysis.get('damage_type', damage_type)
+            if ai_analysis.get('suggested_description') and not description:
+                description = ai_analysis.get('suggested_description', description)
+            
+            # Set priority based on AI analysis
+            priority = ai_analysis.get('priority', 'normal')
+    
+    # Validate that at least one piece of evidence exists
+    has_evidence = False
+    if 'media' in request.files:
+        files = request.files.getlist('media')
+        has_evidence = any(f.filename for f in files)
+    
+    if not has_evidence:
+        flash('Please upload at least one photo or video as evidence', 'error')
+        return redirect(url_for('claims'))
+    
     claim = Claim(
         user_id=current_user.id,
         policy_id=request.form.get('policy_id') if request.form.get('policy_id') else None,
         claim_number=f'CLM-{datetime.now().strftime("%Y%m%d%H%M%S")}',
-        description=request.form.get('description'),
-        damage_type=request.form.get('damage_type'),
+        description=description,
+        damage_type=damage_type,
         latitude=float(request.form.get('latitude')) if request.form.get('latitude') else None,
         longitude=float(request.form.get('longitude')) if request.form.get('longitude') else None,
         address=request.form.get('address')
@@ -394,7 +471,11 @@ def file_claim():
                 db.session.add(claim_media)
     
     db.session.commit()
-    flash('Claim filed successfully', 'success')
+    
+    if ai_analysis:
+        flash(f'Claim filed successfully. AI Analysis: {damage_type} detected (Priority: {ai_analysis.get("priority", "normal")})', 'success')
+    else:
+        flash('Claim filed successfully', 'success')
     return redirect(url_for('claims'))
 
 @app.route('/services/policy-management')
@@ -402,7 +483,21 @@ def file_claim():
 def policy_management():
     policies = SwissAxaPolicy.query.filter_by(user_id=current_user.id).all()
     change_requests = PolicyChangeRequest.query.filter_by(user_id=current_user.id).all()
-    return render_template('policy_management.html', policies=policies, change_requests=change_requests)
+    
+    # Get AI recommendations if available
+    ai_recommendations = []
+    if AIService.is_available():
+        user_profile = {
+            'policies': [p.policy_type for p in policies],
+            'claims_count': len(current_user.claims),
+            'location': current_user.address or 'Unknown'
+        }
+        ai_recommendations = AIService.recommend_policies(user_profile)
+    
+    return render_template('policy_management.html', 
+                         policies=policies, 
+                         change_requests=change_requests,
+                         ai_recommendations=ai_recommendations)
 
 @app.route('/services/policy-management/request', methods=['POST'])
 @login_required
@@ -464,6 +559,32 @@ def information():
 @app.route('/information/update', methods=['POST'])
 @login_required
 def update_information():
+    # Collect user data for AI validation
+    user_data = {
+        'first_name': request.form.get('first_name'),
+        'last_name': request.form.get('last_name'),
+        'phone': request.form.get('phone'),
+        'address': request.form.get('address'),
+        'correspondence_address': request.form.get('correspondence_address'),
+        'email': current_user.email
+    }
+    
+    # AI-powered data validation
+    validation_result = AIService.validate_user_data(user_data)
+    
+    # Check if sensitive fields changed (address, bank account)
+    sensitive_changed = (
+        current_user.address != request.form.get('address') or
+        current_user.correspondence_address != request.form.get('correspondence_address') or
+        current_user.bank_account != request.form.get('bank_account')
+    )
+    
+    # Require re-authentication for sensitive changes or if AI detects inconsistencies
+    if sensitive_changed or validation_result.get('requires_reauth'):
+        # In production, this would require password confirmation
+        if validation_result.get('inconsistencies'):
+            flash(f'Please verify your information: {", ".join(validation_result["inconsistencies"])}', 'warning')
+    
     current_user.first_name = request.form.get('first_name')
     current_user.last_name = request.form.get('last_name')
     current_user.phone = request.form.get('phone')
@@ -472,34 +593,111 @@ def update_information():
     current_user.bank_account = request.form.get('bank_account')
     
     db.session.commit()
-    flash('Information updated successfully', 'success')
+    
+    if validation_result.get('inconsistencies'):
+        flash('Information updated. Please review any warnings above.', 'warning')
+    else:
+        flash('Information updated successfully', 'success')
     return redirect(url_for('information'))
 
 # AI-powered external policy comparison
 @app.route('/api/policy-comparison', methods=['POST'])
 @login_required
 def compare_policies():
-    # Simplified AI comparison - in production, use OpenAI or similar
-    external_policy_data = request.json.get('external_policy')
+    """AI-powered policy comparison using OpenAI"""
+    external_policy_data = request.json.get('external_policy', {})
     
-    # Mock AI comparison result
-    comparison_result = {
-        'similar_products': [
-            {
-                'name': 'Comprehensive Insurance Premium',
-                'coverage': external_policy_data.get('policy_type', 'General'),
-                'premium': '99.99 EUR/month',
-                'match_score': 85
-            }
-        ],
-        'recommendations': [
-            'Our premium product offers 20% better coverage',
-            'Includes 24/7 customer support',
-            'Faster claims processing'
-        ]
-    }
+    # Use AI service for comparison
+    comparison_result = AIService.compare_policies(external_policy_data)
     
     return jsonify(comparison_result)
+
+# AI-powered document tagging
+@app.route('/api/document-tag', methods=['POST'])
+@login_required
+def tag_document():
+    """AI-powered document type tagging"""
+    filename = request.json.get('filename', '')
+    if not filename:
+        return jsonify({'error': 'Filename required'}), 400
+    
+    tag = AIService.tag_document(filename)
+    return jsonify({'document_type': tag})
+
+# AI-powered claims analysis
+@app.route('/api/claims/analyze', methods=['POST'])
+@login_required
+def analyze_claim():
+    """AI-powered claim damage analysis"""
+    data = request.json
+    claim_description = data.get('description', '')
+    image_description = data.get('image_description', '')
+    
+    analysis = AIService.analyze_claim_damage(
+        image_description=image_description,
+        claim_description=claim_description
+    )
+    
+    return jsonify(analysis)
+
+# AI-powered policy recommendations
+@app.route('/api/policy-recommendations', methods=['GET'])
+@login_required
+def get_policy_recommendations():
+    """Get AI-powered policy recommendations for user"""
+    user_profile = {
+        'policies': [p.policy_type for p in current_user.swissaxa_policies],
+        'claims_count': len(current_user.claims),
+        'location': current_user.address or 'Unknown',
+        'age': 'Unknown'  # Could be added to user model
+    }
+    
+    recommendations = AIService.recommend_policies(user_profile)
+    return jsonify({'recommendations': recommendations})
+
+# AI-powered appointment suggestions
+@app.route('/api/appointment-suggestions', methods=['POST'])
+@login_required
+def get_appointment_suggestions():
+    """Get AI-powered appointment time suggestions"""
+    appointment_type = request.json.get('appointment_type', 'service_desk')
+    
+    suggestions = AIService.suggest_appointment_times(
+        user_id=current_user.id,
+        appointment_type=appointment_type
+    )
+    
+    return jsonify({'suggestions': suggestions})
+
+# AI chatbot endpoint
+@app.route('/api/chat', methods=['POST'])
+@login_required
+def chat_with_ai():
+    """AI chatbot endpoint"""
+    message = request.json.get('message', '')
+    if not message:
+        return jsonify({'error': 'Message required'}), 400
+    
+    # Get conversation history from session
+    conversation_history = session.get('chat_history', [])
+    
+    # Get AI response
+    response = AIService.chat_with_ai(message, conversation_history)
+    
+    # Update conversation history
+    conversation_history.append({'role': 'user', 'content': message})
+    conversation_history.append({'role': 'assistant', 'content': response})
+    session['chat_history'] = conversation_history[-10:]  # Keep last 10 messages
+    
+    return jsonify({'response': response})
+
+# Clear chat history
+@app.route('/api/chat/clear', methods=['POST'])
+@login_required
+def clear_chat_history():
+    """Clear chat conversation history"""
+    session.pop('chat_history', None)
+    return jsonify({'success': True})
 
 if __name__ == '__main__':
     with app.app_context():

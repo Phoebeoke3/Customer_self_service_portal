@@ -32,24 +32,39 @@ class TestFileClaim:
     def test_file_claim_success(self, test_app, authenticated_client, test_user, test_policy):
         """Test successful claim filing"""
         with test_app.app_context():
-            response = authenticated_client.post('/services/claims/file',
-                data={
-                    'policy_id': str(test_policy['id']),
-                    'description': 'Test claim description',
-                    'damage_type': 'Fire Damage',
-                    'latitude': '50.1109',
-                    'longitude': '8.6821',
-                    'address': 'Frankfurt, Germany'
-                },
-                follow_redirects=True
-            )
-            assert response.status_code == 200
+            import tempfile
+            import os
             
-            # Verify claim was created
-            claim = Claim.query.filter_by(description='Test claim description').first()
-            assert claim is not None
-            assert claim.damage_type == 'Fire Damage'
-            assert claim.status == 'submitted'
+            # Create temporary image file (required for evidence)
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+            temp_file.write(b'Fake image content')
+            temp_file.close()
+            
+            try:
+                with open(temp_file.name, 'rb') as f:
+                    response = authenticated_client.post('/services/claims/file',
+                        data={
+                            'policy_id': str(test_policy['id']),
+                            'description': 'Test claim description',
+                            'damage_type': 'Fire Damage',
+                            'latitude': '50.1109',
+                            'longitude': '8.6821',
+                            'address': 'Frankfurt, Germany',
+                            'media': (f, 'test_image.jpg')
+                        },
+                        content_type='multipart/form-data',
+                        follow_redirects=True
+                    )
+                
+                assert response.status_code == 200
+                
+                # Verify claim was created
+                claim = Claim.query.filter_by(description='Test claim description').first()
+                assert claim is not None
+                assert claim.damage_type == 'Fire Damage'
+                assert claim.status == 'submitted'
+            finally:
+                os.unlink(temp_file.name)
     
     def test_file_claim_with_media(self, test_app, authenticated_client, test_user, test_policy):
         """Test filing claim with photos/videos"""
@@ -90,20 +105,35 @@ class TestFileClaim:
     def test_file_claim_without_policy(self, test_app, authenticated_client, test_user):
         """Test filing claim without policy"""
         with test_app.app_context():
-            response = authenticated_client.post('/services/claims/file',
-                data={
-                    'description': 'Claim without policy',
-                    'damage_type': 'Theft',
-                    'address': 'Berlin, Germany'
-                },
-                follow_redirects=True
-            )
-            assert response.status_code == 200
+            import tempfile
+            import os
             
-            # Claim should still be created
-            claim = Claim.query.filter_by(description='Claim without policy').first()
-            assert claim is not None
-            assert claim.policy_id is None
+            # Create temporary image file (required for evidence)
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+            temp_file.write(b'Fake image content')
+            temp_file.close()
+            
+            try:
+                with open(temp_file.name, 'rb') as f:
+                    response = authenticated_client.post('/services/claims/file',
+                        data={
+                            'description': 'Claim without policy',
+                            'damage_type': 'Theft',
+                            'address': 'Berlin, Germany',
+                            'media': (f, 'test_image.jpg')
+                        },
+                        content_type='multipart/form-data',
+                        follow_redirects=True
+                    )
+                
+                assert response.status_code == 200
+                
+                # Claim should still be created
+                claim = Claim.query.filter_by(description='Claim without policy').first()
+                assert claim is not None
+                assert claim.policy_id is None
+            finally:
+                os.unlink(temp_file.name)
     
     def test_file_claim_requires_auth(self, client):
         """Test that filing claim requires authentication"""

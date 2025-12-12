@@ -102,9 +102,197 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- AI Chatbot Widget -->
+    {% if current_user.is_authenticated %}
+    <div id="chatbotWidget" class="chatbot-widget">
+        <div id="chatbotToggle" class="chatbot-toggle">
+            <i class="fas fa-robot"></i>
+            <span class="badge bg-danger" id="chatbotBadge" style="display: none;">1</span>
+        </div>
+        <div id="chatbotWindow" class="chatbot-window" style="display: none;">
+            <div class="chatbot-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-robot"></i> AI Assistant
+                </h6>
+                <button type="button" class="btn-close btn-close-white" id="chatbotClose"></button>
+            </div>
+            <div class="chatbot-body" id="chatbotMessages">
+                <div class="chat-message bot-message">
+                    <div class="message-content">
+                        Hello! I'm your AI assistant. How can I help you today? I can assist with policies, claims, documents, and general questions.
+                    </div>
+                </div>
+            </div>
+            <div class="chatbot-input">
+                <input type="text" id="chatbotInput" class="form-control" placeholder="Type your message..." autocomplete="off">
+                <button type="button" id="chatbotSend" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     {% block extra_js %}{% endblock %}
+    
+    {% if current_user.is_authenticated %}
+    <script>
+        // Chatbot functionality
+        $(document).ready(function() {
+            const $toggle = $('#chatbotToggle');
+            const $window = $('#chatbotWindow');
+            const $close = $('#chatbotClose');
+            const $input = $('#chatbotInput');
+            const $send = $('#chatbotSend');
+            const $messages = $('#chatbotMessages');
+            
+            $toggle.on('click', function() {
+                $window.toggle();
+                $('#chatbotBadge').hide();
+            });
+            
+            $close.on('click', function() {
+                $window.hide();
+            });
+            
+            function addMessage(message, isBot = false) {
+                const $message = $('<div class="chat-message ' + (isBot ? 'bot-message' : 'user-message') + '">');
+                const $content = $('<div class="message-content">').text(message);
+                $message.append($content);
+                $messages.append($message);
+                $messages.scrollTop($messages[0].scrollHeight);
+            }
+            
+            function sendMessage() {
+                const message = $input.val().trim();
+                if (!message) return;
+                
+                addMessage(message, false);
+                $input.val('');
+                $send.prop('disabled', true);
+                
+                $.ajax({
+                    url: '/api/chat',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ message: message }),
+                    success: function(data) {
+                        addMessage(data.response, true);
+                    },
+                    error: function() {
+                        addMessage('Sorry, I encountered an error. Please try again.', true);
+                    },
+                    complete: function() {
+                        $send.prop('disabled', false);
+                        $input.focus();
+                    }
+                });
+            }
+            
+            $send.on('click', sendMessage);
+            $input.on('keypress', function(e) {
+                if (e.which === 13) {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+    <style>
+        .chatbot-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .chatbot-toggle {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            position: relative;
+            transition: transform 0.2s;
+        }
+        .chatbot-toggle:hover {
+            transform: scale(1.1);
+        }
+        .chatbot-window {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chatbot-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chatbot-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        .chat-message {
+            margin-bottom: 15px;
+            display: flex;
+        }
+        .user-message {
+            justify-content: flex-end;
+        }
+        .bot-message {
+            justify-content: flex-start;
+        }
+        .message-content {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+        .user-message .message-content {
+            background: #667eea;
+            color: white;
+        }
+        .bot-message .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+        .chatbot-input {
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            background: white;
+        }
+        .chatbot-input input {
+            flex: 1;
+        }
+        #chatbotBadge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+        }
+    </style>
+    {% endif %}
 </body>
 </html>
 

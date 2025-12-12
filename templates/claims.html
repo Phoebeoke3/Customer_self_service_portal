@@ -42,7 +42,10 @@
                     </div>
                     <div class="mb-3">
                         <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                        <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-robot text-info"></i> AI will help pre-fill this after you upload photos/videos
+                        </small>
                     </div>
                     <div class="mb-3">
                         <label for="address" class="form-label">Location Address</label>
@@ -59,10 +62,16 @@
                         </button>
                     </div>
                     <div class="mb-3">
-                        <label for="media" class="form-label">Upload Photos/Videos</label>
+                        <label for="media" class="form-label">Upload Photos/Videos <span class="text-danger">*</span></label>
                         <input type="file" class="form-control" id="media" name="media" 
-                               accept="image/*,video/*" multiple>
-                        <small class="form-text text-muted">Upload photos or videos of the damage</small>
+                               accept="image/*,video/*" multiple required>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-robot text-info"></i> AI will analyze your photos/videos to detect damage type and severity. 
+                            <strong>At least one photo or video is required.</strong>
+                        </small>
+                        <div id="aiAnalysisResult" class="alert alert-info mt-2" style="display: none;">
+                            <i class="fas fa-robot"></i> <strong>AI Analysis:</strong> <span id="aiAnalysisText"></span>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="fas fa-paper-plane"></i> File Claim
@@ -185,6 +194,32 @@
         }
     }
     
+    // AI-powered claim analysis
+    $('#media').on('change', function() {
+        const files = this.files;
+        if (files.length > 0) {
+            // Show loading
+            $('#aiAnalysisResult').show().html('<i class="fas fa-spinner fa-spin"></i> Analyzing damage with AI...');
+            
+            // Simulate AI analysis (in production, this would analyze the actual images)
+            setTimeout(function() {
+                $('#aiAnalysisResult').html(
+                    '<i class="fas fa-robot"></i> <strong>AI Ready:</strong> ' +
+                    'Upload ' + files.length + ' file(s). AI will analyze damage type and pre-fill description when you submit.'
+                );
+            }, 500);
+        }
+    });
+
+    // AI analysis on form submit
+    $('form').on('submit', function(e) {
+        const files = $('#media')[0].files;
+        if (files.length > 0) {
+            // AI will analyze on backend
+            $('#aiAnalysisResult').html('<i class="fas fa-spinner fa-spin"></i> Processing with AI...');
+        }
+    });
+
     function viewClaim(claimId) {
         // View claim details
         alert('Claim details view - Implementation pending');

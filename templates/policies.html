@@ -235,29 +235,58 @@
 
     function comparePolicy(policyId) {
         $('#comparisonModal').modal('show');
-        $('#comparisonResults').html('<div class="text-center"><div class="spinner-border" role="status"></div></div>');
+        $('#comparisonResults').html('<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">AI is analyzing your policy...</p></div>');
         
-        // Simulate AI comparison - in production, this would call the API with actual policy data
-        setTimeout(function() {
-            $('#comparisonResults').html(`
-                <div class="alert alert-info">
-                    <h6>Similar Products Found:</h6>
-                    <div class="card mt-3">
-                        <div class="card-body">
-                            <h5 class="card-title">Comprehensive Insurance Premium</h5>
-                            <p class="card-text">Match Score: 85%</p>
-                            <p class="card-text">Premium: 99.99 EUR/month</p>
-                            <ul class="list-unstyled">
-                                <li><i class="fas fa-check text-success"></i> Better coverage (20% more)</li>
-                                <li><i class="fas fa-check text-success"></i> 24/7 customer support</li>
-                                <li><i class="fas fa-check text-success"></i> Faster claims processing</li>
-                            </ul>
-                            <button class="btn btn-primary">Get Quote</button>
-                        </div>
-                    </div>
-                </div>
-            `);
-        }, 1000);
+        // Get policy data (you would fetch this from the server)
+        const externalPolicyData = {
+            policy_type: 'General Insurance',
+            coverage: 'Standard',
+            premium: '89.99 EUR/month'
+        };
+        
+        // Call AI-powered comparison API
+        $.ajax({
+            url: '/api/policy-comparison',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ external_policy: externalPolicyData }),
+            success: function(data) {
+                let html = '<div class="alert alert-success">';
+                html += '<h6><i class="fas fa-robot"></i> AI-Powered Comparison Results:</h6>';
+                
+                if (data.similar_products && data.similar_products.length > 0) {
+                    data.similar_products.forEach(function(product) {
+                        html += '<div class="card mt-3">';
+                        html += '<div class="card-body">';
+                        html += '<h5 class="card-title">' + product.name + '</h5>';
+                        html += '<p class="card-text"><strong>Match Score:</strong> ' + product.match_score + '%</p>';
+                        html += '<p class="card-text"><strong>Premium:</strong> ' + product.premium + '</p>';
+                        if (product.coverage) {
+                            html += '<p class="card-text"><strong>Coverage:</strong> ' + product.coverage + '</p>';
+                        }
+                        html += '</div></div>';
+                    });
+                }
+                
+                if (data.recommendations && data.recommendations.length > 0) {
+                    html += '<div class="mt-3"><h6>AI Recommendations:</h6><ul class="list-unstyled">';
+                    data.recommendations.forEach(function(rec) {
+                        html += '<li><i class="fas fa-check text-success"></i> ' + rec + '</li>';
+                    });
+                    html += '</ul></div>';
+                }
+                
+                html += '</div>';
+                $('#comparisonResults').html(html);
+            },
+            error: function() {
+                $('#comparisonResults').html(
+                    '<div class="alert alert-warning">' +
+                    'AI comparison is temporarily unavailable. Please try again later.' +
+                    '</div>'
+                );
+            }
+        });
     }
 </script>
 {% endblock %}

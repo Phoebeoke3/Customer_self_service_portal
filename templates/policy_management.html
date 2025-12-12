@@ -27,6 +27,24 @@
 <div class="tab-content" id="managementTabContent">
     <!-- Policies Tab -->
     <div class="tab-pane fade show active" id="policies" role="tabpanel">
+        <!-- AI Recommendations Section -->
+        <div class="card border-info mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-robot"></i> AI-Powered Policy Recommendations
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Get personalized policy recommendations based on your profile and history.</p>
+                <button class="btn btn-info" onclick="loadAIRecommendations()">
+                    <i class="fas fa-lightbulb"></i> Get AI Recommendations
+                </button>
+                <div id="aiRecommendations" class="mt-3" style="display: none;">
+                    <!-- Recommendations will be loaded here -->
+                </div>
+            </div>
+        </div>
+        
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">SwissAxa Policies</h5>
@@ -178,6 +196,38 @@
         document.getElementById('policy_id').value = policyId || '';
         document.getElementById('request_type').value = requestType;
         new bootstrap.Modal(document.getElementById('changeRequestModal')).show();
+    }
+    
+    function loadAIRecommendations() {
+        $('#aiRecommendations').show().html('<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">AI is analyzing your profile...</p></div>');
+        
+        $.ajax({
+            url: '/api/policy-recommendations',
+            method: 'GET',
+            success: function(data) {
+                if (data.recommendations && data.recommendations.length > 0) {
+                    let html = '<div class="alert alert-info"><h6><i class="fas fa-robot"></i> Recommended for You:</h6><div class="row g-3 mt-2">';
+                    data.recommendations.forEach(function(rec) {
+                        html += '<div class="col-md-6">';
+                        html += '<div class="card border-info">';
+                        html += '<div class="card-body">';
+                        html += '<h6 class="card-title">' + (rec.name || 'Policy Recommendation') + '</h6>';
+                        html += '<p class="card-text small">' + (rec.reason || rec.type || 'Based on your profile') + '</p>';
+                        if (rec.estimated_premium) {
+                            html += '<p class="card-text"><strong>Est. Premium:</strong> ' + rec.estimated_premium + '</p>';
+                        }
+                        html += '</div></div></div>';
+                    });
+                    html += '</div></div>';
+                    $('#aiRecommendations').html(html);
+                } else {
+                    $('#aiRecommendations').html('<div class="alert alert-info">No specific recommendations at this time. Your current coverage appears adequate.</div>');
+                }
+            },
+            error: function() {
+                $('#aiRecommendations').html('<div class="alert alert-warning">AI recommendations are temporarily unavailable. Please try again later.</div>');
+            }
+        });
     }
 </script>
 {% endblock %}
