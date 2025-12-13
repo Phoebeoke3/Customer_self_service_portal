@@ -126,12 +126,63 @@ A comprehensive customer self-service portal for SwissAxa insurance company in N
      ```
 
 8. **Run the application**
+   
+   **Windows (PowerShell):**
+   ```powershell
+   .\run_server.ps1
+   ```
+   
+   **Windows (Command Prompt):**
+   ```cmd
+   run_server.bat
+   ```
+   
+   **Or directly:**
    ```bash
    python app.py
    ```
+   
+   **Note**: The server runs on `0.0.0.0:5000` by default, making it accessible from localhost and network interfaces.
 
 9. **Access the application**
    - Open your browser and navigate to: `http://localhost:5000` or `http://127.0.0.1:5000`
+   - If you encounter connection issues, ensure no other processes are using port 5000
+
+## Troubleshooting
+
+### Connection Refused Error
+
+If you see "ERR_CONNECTION_REFUSED" when trying to access the application:
+
+1. **Check if port 5000 is in use:**
+   ```powershell
+   netstat -ano | findstr :5000
+   ```
+
+2. **Kill processes using port 5000 (Windows):**
+   ```powershell
+   # Find the process ID from step 1, then:
+   taskkill /F /PID <process_id>
+   ```
+
+3. **Restart the server:**
+   ```powershell
+   .\run_server.ps1
+   ```
+
+4. **Verify the server is running:**
+   ```powershell
+   # Test if server responds
+   Invoke-WebRequest -Uri "http://localhost:5000" -UseBasicParsing
+   ```
+
+### Test Failures
+
+If tests fail:
+1. Ensure the virtual environment is activated
+2. Ensure all dependencies are installed: `pip install -r requirements.txt`
+3. Check that the test database can be created (permissions)
+4. Run tests with verbose output: `pytest tests/ -v`
    - Register a new account or use an existing one
    - Click the "Show Features" button in the dashboard to view AI-powered features
    - Access analytics dashboard at `/admin/analytics`
@@ -253,7 +304,7 @@ The application uses SQLAlchemy with SQLite database and includes the following 
 
 ## Testing
 
-The project includes a comprehensive unit test suite using pytest with **76 passing tests** covering all major functionality.
+The project includes a comprehensive unit test suite using pytest with **76 passing tests** covering all major functionality. All tests are currently passing with **77% code coverage**.
 
 ### Quick Start
 
@@ -290,6 +341,9 @@ python run_tests.py
 ```
 
 ### Test Coverage
+
+**Latest Test Results**: ✅ **76/76 tests passing** (100% pass rate)  
+**Code Coverage**: **77%** (550 statements, 128 missing)
 
 The test suite includes **76 tests** covering:
 
@@ -357,14 +411,15 @@ tests/
 - **Automatic cleanup** - Test data is cleaned up after each test
 - **Comprehensive fixtures** - Reusable test data for all models
 - **Coverage reporting** - HTML and terminal coverage reports
-- **Fast execution** - Tests run in ~30 seconds
+- **Fast execution** - Tests run in ~50-60 seconds
+- **Latest run**: All 76 tests passed successfully
 
 See `tests/README.md` for detailed testing documentation and best practices.
 
 ## Project Status
 
 ✅ **Core Features**: Fully implemented and tested  
-✅ **Unit Tests**: 76 tests passing (82% code coverage)  
+✅ **Unit Tests**: 76 tests passing (77% code coverage) - All tests passing as of latest run  
 ✅ **Documentation**: Complete functional requirements  
 ✅ **AI Features**: Fully implemented with OpenAI integration  
   - ✅ AI Policy Comparison
