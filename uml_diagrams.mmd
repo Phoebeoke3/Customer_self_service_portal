@@ -1,0 +1,402 @@
+%% SwissAxa Customer Self-Service Portal - UML Diagrams (Mermaid)
+%% Copy each diagram to https://mermaid.live/ to view
+
+%% ============================================
+%% 1. System Architecture / Component Diagram
+%% ============================================
+graph TB
+    subgraph "Client Layer"
+        WebBrowser[Web Browser]
+        MobileApp[Mobile App]
+    end
+    
+    subgraph "Presentation Layer"
+        WebApp[Flask Web Application]
+        RESTAPI[REST API]
+    end
+    
+    subgraph "Business Logic Layer"
+        AIServices[AI Services]
+        EmailService[Email Service]
+        NotificationService[Notification Service]
+        BankAPI[Bank API Integration]
+        AnalyticsService[Analytics Service]
+        I18nService[i18n Service]
+    end
+    
+    subgraph "Data Layer"
+        Database[(SQLite Database)]
+        FileStorage[File Storage]
+    end
+    
+    subgraph "External Services"
+        OpenAI[OpenAI API]
+        SMTP[SMTP Server]
+        GoogleMaps[Google Maps API]
+        BankAPIs[Bank APIs]
+    end
+    
+    WebBrowser --> WebApp
+    MobileApp --> RESTAPI
+    
+    WebApp --> AIServices
+    WebApp --> EmailService
+    WebApp --> NotificationService
+    WebApp --> BankAPI
+    WebApp --> AnalyticsService
+    WebApp --> Database
+    WebApp --> FileStorage
+    
+    RESTAPI --> AIServices
+    RESTAPI --> Database
+    RESTAPI --> FileStorage
+    
+    AIServices --> OpenAI
+    EmailService --> SMTP
+    BankAPI --> BankAPIs
+    WebApp --> GoogleMaps
+
+%% ============================================
+%% 2. Database Entity Relationship Diagram
+%% ============================================
+erDiagram
+    User ||--o{ SwissAxaPolicy : owns
+    User ||--o{ ExternalPolicy : owns
+    User ||--o{ Document : owns
+    User ||--o{ Claim : files
+    User ||--o{ PolicyChangeRequest : requests
+    User ||--o{ Appointment : schedules
+    User ||--o{ BankAccount : connects
+    User ||--o{ AnalyticsEvent : generates
+    User ||--o{ AIUsageLog : uses
+    User }o--|| Agent : assigned_to
+    
+    Agent ||--o{ Appointment : has
+    
+    SwissAxaPolicy ||--o{ Claim : covers
+    SwissAxaPolicy ||--o{ PolicyChangeRequest : changed_by
+    
+    Claim ||--o{ ClaimMedia : contains
+    
+    User {
+        int id PK
+        string email UK
+        string password_hash
+        string first_name
+        string last_name
+        string phone
+        string address
+        int agent_id FK
+    }
+    
+    Agent {
+        int id PK
+        string name
+        string email UK
+        string phone
+    }
+    
+    SwissAxaPolicy {
+        int id PK
+        int user_id FK
+        string policy_number UK
+        string policy_type
+        float coverage_amount
+        float premium
+        date expiration_date
+    }
+    
+    Claim {
+        int id PK
+        int user_id FK
+        int policy_id FK
+        string claim_number UK
+        string description
+        string damage_type
+        float latitude
+        float longitude
+        string status
+    }
+    
+    Document {
+        int id PK
+        int user_id FK
+        string filename
+        string file_path
+        string document_type
+    }
+
+%% ============================================
+%% 3. Use Case Diagram
+%% ============================================
+graph LR
+    subgraph "Customer Use Cases"
+        UC1[Register Account]
+        UC2[Login/Logout]
+        UC3[View Policies]
+        UC4[Upload External Policy]
+        UC5[AI Policy Comparison]
+        UC6[Upload Documents]
+        UC7[AI Document Tagging]
+        UC8[File Claim]
+        UC9[AI Claims Analysis]
+        UC10[Connect Bank Account]
+        UC11[Schedule Appointment]
+        UC12[AI Appointment Suggestions]
+        UC13[Chat with AI]
+        UC14[Update Information]
+        UC15[AI Data Validation]
+    end
+    
+    Customer((Customer)) --> UC1
+    Customer --> UC2
+    Customer --> UC3
+    Customer --> UC4
+    Customer --> UC5
+    Customer --> UC6
+    Customer --> UC7
+    Customer --> UC8
+    Customer --> UC9
+    Customer --> UC10
+    Customer --> UC11
+    Customer --> UC12
+    Customer --> UC13
+    Customer --> UC14
+    Customer --> UC15
+    
+    UC4 -.->|extends| UC5
+    UC6 -.->|extends| UC7
+    UC8 -.->|extends| UC9
+    UC11 -.->|extends| UC12
+    UC14 -.->|extends| UC15
+
+%% ============================================
+%% 4. Sequence Diagram: AI-Powered Claim Filing
+%% ============================================
+sequenceDiagram
+    participant C as Customer
+    participant B as Browser
+    participant A as Flask App
+    participant CM as Claims Module
+    participant AI as AI Service
+    participant OAI as OpenAI API
+    participant DB as Database
+    participant FS as File Storage
+    participant E as Email Service
+    participant N as Notification Service
+    
+    C->>B: Navigate to Claims Page
+    B->>A: GET /services/claims
+    A->>CM: Render claims page
+    CM->>DB: Query user policies
+    DB-->>CM: Return policies
+    CM-->>A: Render template
+    A-->>B: Display claims form
+    B-->>C: Show form with policies
+    
+    C->>B: Fill form + Upload photos
+    B->>A: POST /services/file_claim
+    A->>CM: Process claim
+    CM->>FS: Save media files
+    FS-->>CM: Return file paths
+    
+    CM->>AI: analyze_claim_damage(images)
+    AI->>OAI: GPT-4o Vision API
+    OAI-->>AI: Return analysis
+    AI-->>CM: AI analysis results
+    
+    CM->>DB: Create Claim + ClaimMedia
+    DB-->>CM: Return claim ID
+    
+    CM->>N: Create notification
+    N->>DB: Save notification
+    
+    CM->>E: Send confirmation email
+    E->>E: SMTP send
+    
+    CM-->>A: Success response
+    A-->>B: Redirect to claims list
+    B-->>C: Show confirmation
+
+%% ============================================
+%% 5. Deployment Architecture
+%% ============================================
+graph TB
+    subgraph "Client Devices"
+        WB[Web Browser]
+        MA[Mobile App]
+    end
+    
+    subgraph "Web Server"
+        NG[Nginx]
+        WSGI[Gunicorn/uWSGI]
+        FA[Flask Application]
+    end
+    
+    subgraph "Application Server"
+        SQL[(SQLite Database)]
+        FS[File Storage]
+        RC[Redis Cache]
+    end
+    
+    subgraph "External Services"
+        OAI[OpenAI API]
+        SMTP[SMTP Server]
+        GM[Google Maps API]
+        BA[Bank APIs]
+    end
+    
+    WB -->|HTTPS| NG
+    MA -->|HTTPS| NG
+    NG -->|HTTP| WSGI
+    WSGI --> FA
+    FA --> SQL
+    FA --> FS
+    FA --> RC
+    FA --> OAI
+    FA --> SMTP
+    FA --> GM
+    FA --> BA
+
+%% ============================================
+%% 6. Service Architecture
+%% ============================================
+graph TB
+    subgraph "Frontend"
+        WUI[Web UI]
+        MUI[Mobile UI]
+    end
+    
+    subgraph "API Gateway"
+        API[REST API Router]
+    end
+    
+    subgraph "Core Services"
+        AS[Auth Service]
+        PS[Policy Service]
+        DS[Document Service]
+        CS[Claim Service]
+        BS[Bank Service]
+        APS[Appointment Service]
+        US[User Service]
+    end
+    
+    subgraph "AI Services"
+        AIO[AI Orchestrator]
+        PAI[Policy AI]
+        DAI[Document AI]
+        CAI[Claim AI]
+        CHAI[Chatbot AI]
+        RAI[Recommendation AI]
+    end
+    
+    subgraph "Integration Services"
+        ES[Email Service]
+        NS[Notification Service]
+        BC[Bank API Client]
+        ANS[Analytics Service]
+        I18S[i18n Service]
+    end
+    
+    subgraph "Data Services"
+        DBS[Database Service]
+        FSS[File Storage Service]
+        CAS[Cache Service]
+    end
+    
+    WUI --> API
+    MUI --> API
+    
+    API --> AS
+    API --> PS
+    API --> DS
+    API --> CS
+    API --> BS
+    API --> APS
+    API --> US
+    
+    PS --> AIO
+    DS --> AIO
+    CS --> AIO
+    US --> AIO
+    
+    AIO --> PAI
+    AIO --> DAI
+    AIO --> CAI
+    AIO --> CHAI
+    AIO --> RAI
+    
+    PS --> ES
+    CS --> ES
+    APS --> ES
+    
+    PS --> NS
+    CS --> NS
+    APS --> NS
+    
+    BS --> BC
+    
+    PS --> ANS
+    CS --> ANS
+    DS --> ANS
+    
+    AS --> DBS
+    PS --> DBS
+    DS --> DBS
+    CS --> DBS
+    BS --> DBS
+    APS --> DBS
+    US --> DBS
+    
+    AS --> FSS
+    PS --> FSS
+    DS --> FSS
+    CS --> FSS
+    
+    AS --> CAS
+    PS --> CAS
+    DS --> CAS
+    CS --> CAS
+
+%% ============================================
+%% 7. AI Services Flow
+%% ============================================
+flowchart TD
+    Start([User Action]) --> Check{AI Available?}
+    Check -->|Yes| Process[Process with AI]
+    Check -->|No| Fallback[Use Fallback/Mock]
+    
+    Process --> OpenAI[OpenAI API Call]
+    OpenAI --> GPT4[GPT-4o-mini<br/>or<br/>GPT-4o Vision]
+    GPT4 --> Response[AI Response]
+    
+    Response --> Log[Log Usage]
+    Log --> Analytics[Update Analytics]
+    Analytics --> Return[Return Result]
+    
+    Fallback --> Return
+    Return --> End([End])
+    
+    style Process fill:#90EE90
+    style Fallback fill:#FFB6C1
+    style OpenAI fill:#87CEEB
+    style GPT4 fill:#DDA0DD
+
+%% ============================================
+%% 8. Data Flow: Policy Comparison
+%% ============================================
+flowchart LR
+    A[User Uploads<br/>External Policy] --> B[Extract Policy Data]
+    B --> C[AI Service:<br/>compare_policies]
+    C --> D[OpenAI GPT-4o-mini]
+    D --> E[Analyze & Compare]
+    E --> F[Generate Match Scores]
+    F --> G[Create Recommendations]
+    G --> H[Return Results]
+    H --> I[Display to User]
+    
+    style C fill:#90EE90
+    style D fill:#87CEEB
+    style E fill:#DDA0DD
+
+

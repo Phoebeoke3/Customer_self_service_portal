@@ -1,0 +1,593 @@
+@startuml SwissAxa_Customer_Portal_Architecture
+!theme plain
+skinparam componentStyle rectangle
+skinparam classAttributeIconSize 0
+
+title SwissAxa Customer Self-Service Portal - "To Be" Architecture
+
+' ============================================
+' SYSTEM ARCHITECTURE / COMPONENT DIAGRAM
+' ============================================
+
+package "Client Layer" {
+  [Web Browser] as WebClient
+  [Mobile App] as MobileClient
+}
+
+package "Presentation Layer" {
+  component [Flask Web Application] as WebApp {
+    [Authentication Module]
+    [Dashboard Module]
+    [Policies Module]
+    [Documents Module]
+    [Claims Module]
+    [Bank Module]
+    [Services Module]
+    [Information Module]
+    [Analytics Module]
+  }
+  
+  component [REST API] as RESTAPI {
+    [Mobile API Endpoints]
+    [Notifications API]
+    [Language API]
+    [Analytics API]
+  }
+}
+
+package "Business Logic Layer" {
+  component [AI Services] as AIServices {
+    [Policy Comparison]
+    [Document Tagging]
+    [Claims Analysis]
+    [Policy Recommendations]
+    [Appointment Suggestions]
+    [Data Validation]
+    [Chatbot Service]
+    [Fraud Detection]
+  }
+  
+  component [Email Service] as EmailService
+  component [Notification Service] as NotificationService
+  component [Bank API Integration] as BankAPI
+  component [Analytics Service] as AnalyticsService
+  component [i18n Service] as I18nService
+}
+
+package "Data Layer" {
+  database "SQLite Database" as Database {
+    [User]
+    [Agent]
+    [SwissAxaPolicy]
+    [ExternalPolicy]
+    [Document]
+    [Claim]
+    [ClaimMedia]
+    [PolicyChangeRequest]
+    [Appointment]
+    [BankAccount]
+    [AnalyticsEvent]
+    [AIUsageLog]
+  }
+  
+  folder "File Storage" as FileStorage {
+    [Documents]
+    [Policies]
+    [Claims Media]
+  }
+}
+
+package "External Services" {
+  cloud "OpenAI API" as OpenAI {
+    [GPT-4o-mini]
+    [GPT-4o Vision]
+  }
+  
+  cloud "SMTP Server" as SMTP
+  cloud "Google Maps API" as GoogleMaps
+  cloud "Bank APIs" as BankAPIs {
+    [Sparkasse API]
+    [N26 API]
+    [Deutsche Bank API]
+  }
+}
+
+' Connections
+WebClient --> WebApp
+MobileClient --> RESTAPI
+WebApp --> AIServices
+WebApp --> EmailService
+WebApp --> NotificationService
+WebApp --> BankAPI
+WebApp --> AnalyticsService
+WebApp --> I18nService
+WebApp --> Database
+WebApp --> FileStorage
+
+RESTAPI --> AIServices
+RESTAPI --> NotificationService
+RESTAPI --> Database
+RESTAPI --> FileStorage
+
+AIServices --> OpenAI
+EmailService --> SMTP
+BankAPI --> BankAPIs
+WebApp --> GoogleMaps
+
+@enduml
+
+@startuml SwissAxa_Database_Models
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+title SwissAxa Portal - Database Models (Class Diagram)
+
+class User {
+  +id: Integer [PK]
+  +email: String [UNIQUE]
+  +password_hash: String
+  +first_name: String
+  +last_name: String
+  +phone: String
+  +address: String
+  +correspondence_address: String
+  +bank_account: String
+  +agent_id: Integer [FK]
+  --
+  +set_password(password: String): void
+  +check_password(password: String): Boolean
+}
+
+class Agent {
+  +id: Integer [PK]
+  +name: String
+  +email: String [UNIQUE]
+  +phone: String
+}
+
+class SwissAxaPolicy {
+  +id: Integer [PK]
+  +user_id: Integer [FK]
+  +policy_number: String [UNIQUE]
+  +policy_type: String
+  +coverage_amount: Float
+  +premium: Float
+  +expiration_date: Date
+  +status: String
+  +created_at: DateTime
+}
+
+class ExternalPolicy {
+  +id: Integer [PK]
+  +user_id: Integer [FK]
+  +insurance_company: String
+  +policy_number: String
+  +policy_type: String
+  +expiration_date: Date
+  +file_path: String
+  +uploaded_at: DateTime
+}
+
+class Document {
+  +id: Integer [PK]
+  +user_id: Integer [FK]
+  +filename: String
+  +file_path: String
+  +document_type: String
+  +uploaded_at: DateTime
+}
+
+class Claim {
+  +id: Integer [PK]
+  +user_id: Integer [FK]
+  +policy_id: Integer [FK]
+  +claim_number: String [UNIQUE]
+  +description: Text
+  +damage_type: String
+  +latitude: Float
+  +longitude: Float
+  +address: String
+  +status: String
+  +submitted_at: DateTime
+}
+
+class ClaimMedia {
+  +id: Integer [PK]
+  +claim_id: Integer [FK]
+  +filename: String
+  +file_path: String
+  +media_type: String
+  +uploaded_at: DateTime
+}
+
+class PolicyChangeRequest {
+  +id: Integer [PK]
+  +user_id: Integer [FK]
+  +policy_id: Integer [FK]
+  +request_type: String
+  +description: Text
+  +status: String
+  +submitted_at: DateTime
+}
+
+class Appointment {
+  +id: Integer [PK]
+  +user_id: Integer [FK]
+  +agent_id: Integer [FK]
+  +appointment_type: String
+  +date_time: DateTime
+  +purpose: Text
+  +status: String
+  +created_at: DateTime
+}
+
+class BankAccount {
+  +id: Integer [PK]
+  +user_id: Integer [FK]
+  +bank_name: String
+  +account_number: String
+  +is_connected: Boolean
+}
+
+class AnalyticsEvent {
+  +id: Integer [PK]
+  +user_id: Integer [FK]
+  +event_type: String
+  +event_data: JSON
+  +timestamp: DateTime
+}
+
+class AIUsageLog {
+  +id: Integer [PK]
+  +user_id: Integer [FK]
+  +service_type: String
+  +input_tokens: Integer
+  +output_tokens: Integer
+  +cost: Float
+  +timestamp: DateTime
+}
+
+' Relationships
+User "1" --> "*" SwissAxaPolicy : owns
+User "1" --> "*" ExternalPolicy : owns
+User "1" --> "*" Document : owns
+User "1" --> "*" Claim : files
+User "1" --> "*" PolicyChangeRequest : requests
+User "1" --> "*" Appointment : schedules
+User "1" --> "*" BankAccount : connects
+User "1" --> "*" AnalyticsEvent : generates
+User "1" --> "*" AIUsageLog : uses
+User "*" --> "0..1" Agent : assigned to
+
+Agent "1" --> "*" Appointment : has
+
+SwissAxaPolicy "1" --> "*" Claim : covers
+SwissAxaPolicy "1" --> "*" PolicyChangeRequest : changed by
+
+Claim "1" --> "*" ClaimMedia : contains
+
+@enduml
+
+@startuml SwissAxa_Use_Cases
+!theme plain
+skinparam usecase {
+  BackgroundColor lightblue
+  BorderColor darkblue
+}
+
+title SwissAxa Portal - Use Case Diagram
+
+actor Customer as Customer
+actor InsuranceAgent as Agent
+actor SystemAdmin as Admin
+
+rectangle "Customer Self-Service Portal" {
+  
+  package "Authentication" {
+    usecase "Register Account" as UC1
+    usecase "Login" as UC2
+    usecase "Logout" as UC3
+  }
+  
+  package "Policy Management" {
+    usecase "View SwissAxa Policies" as UC4
+    usecase "Upload External Policy" as UC5
+    usecase "Compare Policies (AI)" as UC6
+    usecase "Request Policy Changes" as UC7
+  }
+  
+  package "Document Management" {
+    usecase "Upload Documents" as UC8
+    usecase "Download Documents" as UC9
+    usecase "AI Document Tagging" as UC10
+  }
+  
+  package "Claims Management" {
+    usecase "File Claim" as UC11
+    usecase "Upload Claim Media" as UC12
+    usecase "View Claim Status" as UC13
+    usecase "AI Claims Analysis" as UC14
+  }
+  
+  package "Bank Integration" {
+    usecase "Connect Bank Account" as UC15
+    usecase "Initiate Transaction" as UC16
+    usecase "View Transactions" as UC17
+  }
+  
+  package "Services" {
+    usecase "Contact Service Desk" as UC18
+    usecase "Contact Agent" as UC19
+    usecase "Schedule Appointment" as UC20
+    usecase "AI Appointment Suggestions" as UC21
+    usecase "Get Policy Recommendations (AI)" as UC22
+  }
+  
+  package "User Information" {
+    usecase "View Personal Information" as UC23
+    usecase "Update Personal Information" as UC24
+    usecase "AI Data Validation" as UC25
+  }
+  
+  package "AI Features" {
+    usecase "Chat with AI Assistant" as UC26
+    usecase "AI Fraud Detection" as UC27
+  }
+  
+  package "Mobile API" {
+    usecase "Access Mobile API" as UC28
+    usecase "Receive Notifications" as UC29
+  }
+  
+  package "Analytics" {
+    usecase "View Analytics Dashboard" as UC30
+    usecase "Track AI Usage" as UC31
+  }
+}
+
+' Customer use cases
+Customer --> UC1
+Customer --> UC2
+Customer --> UC3
+Customer --> UC4
+Customer --> UC5
+Customer --> UC6
+Customer --> UC7
+Customer --> UC8
+Customer --> UC9
+Customer --> UC10
+Customer --> UC11
+Customer --> UC12
+Customer --> UC13
+Customer --> UC14
+Customer --> UC15
+Customer --> UC16
+Customer --> UC17
+Customer --> UC18
+Customer --> UC19
+Customer --> UC20
+Customer --> UC21
+Customer --> UC22
+Customer --> UC23
+Customer --> UC24
+Customer --> UC25
+Customer --> UC26
+Customer --> UC27
+Customer --> UC28
+Customer --> UC29
+
+' Agent use cases
+Agent --> UC19
+Agent --> UC20
+
+' Admin use cases
+Admin --> UC30
+Admin --> UC31
+
+' Extend relationships
+UC5 ..> UC6 : <<extend>>
+UC8 ..> UC10 : <<extend>>
+UC11 ..> UC12 : <<extend>>
+UC11 ..> UC14 : <<extend>>
+UC20 ..> UC21 : <<extend>>
+UC24 ..> UC25 : <<extend>>
+
+@enduml
+
+@startuml SwissAxa_Sequence_Claim_Filing
+!theme plain
+skinparam sequenceMessageAlign center
+
+title SwissAxa Portal - Sequence Diagram: AI-Powered Claim Filing
+
+actor Customer
+participant "Web Browser" as Browser
+participant "Flask Application" as App
+participant "Claims Module" as Claims
+participant "AI Service" as AI
+participant "OpenAI API" as OpenAI
+participant "Database" as DB
+participant "File Storage" as Storage
+participant "Email Service" as Email
+participant "Notification Service" as Notif
+
+Customer -> Browser: Navigate to Claims Page
+Browser -> App: GET /services/claims
+App -> Claims: Render claims page
+Claims -> DB: Query user policies
+DB --> Claims: Return policies
+Claims --> App: Render template
+App --> Browser: Display claims form
+Browser --> Customer: Show form with policies
+
+Customer -> Browser: Fill claim form\n+ Upload photos/videos
+Browser -> App: POST /services/file_claim\n(form data + files)
+App -> Claims: Process claim submission
+Claims -> Storage: Save uploaded media files
+Storage --> Claims: Return file paths
+
+Claims -> AI: analyze_claim_damage(\n  images, description\n)
+AI -> OpenAI: GPT-4o Vision API\n(Analyze images)
+OpenAI --> AI: Return analysis\n(damage type, severity, etc.)
+AI --> Claims: Return AI analysis
+
+Claims -> DB: Create Claim record\n+ ClaimMedia records
+DB --> Claims: Return claim ID
+
+Claims -> Notif: Create notification
+Notif -> DB: Save notification
+Notif --> Claims: Notification created
+
+Claims -> Email: Send claim confirmation
+Email -> Email: SMTP send
+Email --> Claims: Email sent
+
+Claims --> App: Return success response
+App --> Browser: Redirect to claims list
+Browser -> Customer: Show claim confirmation
+
+Note over Customer,Notif: AI analyzes damage photos,\npre-fills claim details,\nand sets priority automatically
+
+@enduml
+
+@startuml SwissAxa_Deployment
+!theme plain
+skinparam componentStyle rectangle
+
+title SwissAxa Portal - Deployment Diagram
+
+node "Client Devices" {
+  component [Web Browser] as WebBrowser
+  component [Mobile App] as MobileApp
+}
+
+node "Web Server" {
+  component [Flask Application] as FlaskApp
+  component [Gunicorn/uWSGI] as WSGI
+  component [Nginx] as Nginx
+}
+
+node "Application Server" {
+  database "SQLite Database" as SQLite
+  folder "File Storage" as Files
+  component [Redis Cache] as Redis
+}
+
+node "External Services" {
+  cloud "OpenAI API" as OpenAI
+  cloud "SMTP Server" as SMTP
+  cloud "Google Maps API" as Maps
+  cloud "Bank APIs" as Banks
+}
+
+WebBrowser --> Nginx : HTTPS
+MobileApp --> Nginx : HTTPS
+Nginx --> WSGI : HTTP
+WSGI --> FlaskApp
+FlaskApp --> SQLite
+FlaskApp --> Files
+FlaskApp --> Redis
+FlaskApp --> OpenAI
+FlaskApp --> SMTP
+FlaskApp --> Maps
+FlaskApp --> Banks
+
+note right of FlaskApp
+  Runs on port 5000
+  Debug mode in development
+  Production: Use WSGI server
+end note
+
+@enduml
+
+@startuml SwissAxa_Service_Architecture
+!theme plain
+skinparam componentStyle rectangle
+
+title SwissAxa Portal - Service Architecture
+
+package "Frontend Services" {
+  [Web UI] as WebUI
+  [Mobile UI] as MobileUI
+}
+
+package "API Gateway" {
+  [REST API Router] as APIGateway
+}
+
+package "Core Services" {
+  [Authentication Service] as AuthService
+  [Policy Service] as PolicyService
+  [Document Service] as DocumentService
+  [Claim Service] as ClaimService
+  [Bank Service] as BankService
+  [Appointment Service] as AppointmentService
+  [User Service] as UserService
+}
+
+package "AI Services" {
+  [AI Orchestrator] as AIOrchestrator
+  [Policy Comparison AI] as PolicyAI
+  [Document Tagging AI] as DocAI
+  [Claims Analysis AI] as ClaimAI
+  [Chatbot AI] as ChatAI
+  [Recommendation AI] as RecAI
+}
+
+package "Integration Services" {
+  [Email Service] as EmailSvc
+  [Notification Service] as NotifSvc
+  [Bank API Client] as BankClient
+  [Analytics Service] as AnalyticsSvc
+  [i18n Service] as I18nSvc
+}
+
+package "Data Services" {
+  [Database Service] as DBSvc
+  [File Storage Service] as FileSvc
+  [Cache Service] as CacheSvc
+}
+
+WebUI --> APIGateway
+MobileUI --> APIGateway
+
+APIGateway --> AuthService
+APIGateway --> PolicyService
+APIGateway --> DocumentService
+APIGateway --> ClaimService
+APIGateway --> BankService
+APIGateway --> AppointmentService
+APIGateway --> UserService
+
+PolicyService --> AIOrchestrator
+DocumentService --> AIOrchestrator
+ClaimService --> AIOrchestrator
+UserService --> AIOrchestrator
+
+AIOrchestrator --> PolicyAI
+AIOrchestrator --> DocAI
+AIOrchestrator --> ClaimAI
+AIOrchestrator --> ChatAI
+AIOrchestrator --> RecAI
+
+PolicyService --> EmailSvc
+ClaimService --> EmailSvc
+AppointmentService --> EmailSvc
+
+PolicyService --> NotifSvc
+ClaimService --> NotifSvc
+AppointmentService --> NotifSvc
+
+BankService --> BankClient
+
+PolicyService --> AnalyticsSvc
+ClaimService --> AnalyticsSvc
+DocumentService --> AnalyticsSvc
+
+All Services --> DBSvc
+All Services --> FileSvc
+All Services --> CacheSvc
+
+@enduml
+
